@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Learning Assistant | Gemini</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       Design System - Rule of 8 + Dominant Blue
+       ============================================================ */
+    :root {
+      --blue-950: #061a3a;
+      --blue-900: #0b3d91;
+      --blue-800: #0e4db5;
+      --blue-700: #1565c0;
+      --blue-600: #1e6fea;
+      --blue-500: #3b82f6;
+      --blue-400: #60a5fa;
+      --blue-300: #93c5fd;
+      --blue-100: #dbeafe;
+      --blue-50:  #eff6ff;
+      --gray-900: #0f172a;
+      --gray-700: #334155;
+      --gray-500: #64748b;
+      --gray-300: #cbd5e1;
+      --white:    #ffffff;
+      --error:    #ef4444;
+      --space-1:  8px;
+      --space-2:  16px;
+      --space-3:  24px;
+      --space-4:  32px;
+      --space-5:  40px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 1px 3px rgba(11, 61, 145, 0.08);
+      --shadow-md: 0 4px 12px rgba(11, 61, 145, 0.12);
+      --shadow-lg: 0 8px 24px rgba(11, 61, 145, 0.16);
+      --shadow-glow: 0 0 0 3px rgba(30, 111, 234, 0.25);
+      --transition: 180ms ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: linear-gradient(145deg, var(--blue-50) 0%, #e0f2fe 50%, var(--blue-100) 100%);
+      color: var(--gray-900);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ---------- Modal API Key ---------- */
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(6, 26, 58, 0.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      background: var(--white);
+      padding: var(--space-5) var(--space-4);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      max-width: 420px; width: 90%;
+      text-align: center;
+      animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .brand-icon-large {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--blue-400), var(--blue-600));
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.75rem; margin: 0 auto var(--space-2);
+      box-shadow: var(--shadow-md); color: var(--white);
+    }
+    .modal-content h2 { font-size: 1.375rem; color: var(--blue-900); margin-bottom: var(--space-1); }
+    .modal-content > p { color: var(--gray-500); font-size: 0.875rem; margin-bottom: var(--space-3); }
+    .api-key-form { display: flex; flex-direction: column; gap: var(--space-2); text-align: left; }
+    .api-key-form label { font-size: 0.875rem; font-weight: 600; color: var(--blue-800); }
+    #api-key-input {
+      width: 100%; padding: 12px 16px;
+      border: 2px solid var(--blue-100); border-radius: var(--radius-md);
+      font-family: inherit; font-size: 0.9375rem; background: var(--blue-50);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    #api-key-input:focus {
+      outline: none; border-color: var(--blue-500);
+      box-shadow: var(--shadow-glow); background: var(--white);
+    }
+    .api-key-hint { font-size: 0.8125rem; color: var(--gray-500); }
+    .api-key-hint a { color: var(--blue-600); text-decoration: none; font-weight: 500; }
+    .api-key-hint a:hover { text-decoration: underline; }
+    .api-key-note { margin-top: var(--space-3); font-size: 0.75rem; color: var(--gray-500); line-height: 1.5; }
+    .error-text { color: var(--error); font-weight: 500; font-size: 0.875rem; }
+    .model-select {
+      width: 100%; padding: 10px 12px;
+      border: 2px solid var(--blue-100); border-radius: var(--radius-md);
+      font-family: inherit; font-size: 0.875rem; background: var(--blue-50);
+      color: var(--gray-900); cursor: pointer;
+    }
+    .model-select:focus { outline: none; border-color: var(--blue-500); }
+
+    /* ---------- Layout ---------- */
+    .app-container { display: flex; min-height: 100vh; max-width: 1400px; margin: 0 auto; }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, var(--blue-900) 0%, var(--blue-950) 100%);
+      color: var(--white);
+      display: flex; flex-direction: column;
+      padding: var(--space-3) var(--space-2);
+      box-shadow: var(--shadow-lg);
+      position: sticky; top: 0; height: 100vh; z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); margin-bottom: var(--space-4); }
+    .brand-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--blue-400), var(--blue-600));
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; box-shadow: var(--shadow-md);
+    }
+    .brand-text h1 { font-size: 1.125rem; font-weight: 700; letter-spacing: -0.02em; }
+    .brand-text p { font-size: 0.75rem; color: var(--blue-300); margin-top: 2px; }
+
+    .menu { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; }
+    .menu-btn {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2); background: transparent; border: none;
+      border-radius: var(--radius-md); color: var(--blue-100);
+      font-family: inherit; font-size: 0.9375rem; font-weight: 500;
+      cursor: pointer; text-align: left;
+      transition: background var(--transition), color var(--transition), transform var(--transition);
+    }
+    .menu-btn:hover { background: rgba(255,255,255,0.1); color: var(--white); transform: translateX(4px); }
+    .menu-btn.active {
+      background: linear-gradient(90deg, var(--blue-600), var(--blue-500));
+      color: var(--white); box-shadow: var(--shadow-md);
+    }
+    .menu-btn.active:hover { transform: translateX(0); }
+    .menu-icon { font-size: 1.25rem; width: 28px; text-align: center; }
+    .menu-exit { margin-top: auto; color: var(--blue-300); }
+    .menu-exit:hover { background: rgba(239,68,68,0.2); color: #fca5a5; }
+
+    .sidebar-footer { padding: var(--space-2); margin-top: var(--space-2); border-top: 1px solid rgba(255,255,255,0.1); text-align: center; }
+    .btn-change-key {
+      width: 100%; padding: 8px 12px; margin-bottom: var(--space-2);
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius-sm); color: #bfdbfe;
+      font-family: inherit; font-size: 0.8125rem; cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+    .btn-change-key:hover { background: rgba(255,255,255,0.15); color: var(--white); }
+    .sidebar-footer p { font-size: 0.6875rem; color: var(--blue-300); }
+
+    .main-content {
+      flex: 1; padding: var(--space-4) var(--space-5);
+      display: flex; flex-direction: column; gap: var(--space-3); overflow-y: auto;
+    }
+    .content-header h2 { font-size: 1.75rem; font-weight: 700; color: var(--blue-900); letter-spacing: -0.03em; }
+    .content-header p { color: var(--gray-500); font-size: 0.9375rem; margin-top: var(--space-1); }
+
+    .workspace { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); flex: 1; }
+
+    .input-card, .output-card {
+      background: var(--white); border-radius: var(--radius-lg);
+      padding: var(--space-3); box-shadow: var(--shadow-md);
+      border: 1px solid var(--blue-100);
+      display: flex; flex-direction: column;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+    .input-card:hover, .output-card:hover { box-shadow: var(--shadow-lg); border-color: var(--blue-300); }
+    .input-card label { font-size: 0.875rem; font-weight: 600; color: var(--blue-800); margin-bottom: var(--space-1); }
+
+    #user-input {
+      width: 100%; min-height: 140px; padding: var(--space-2);
+      border: 2px solid var(--blue-100); border-radius: var(--radius-md);
+      font-family: inherit; font-size: 0.9375rem; color: var(--gray-900);
+      resize: vertical; background: var(--blue-50);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    #user-input:focus {
+      outline: none; border-color: var(--blue-500);
+      box-shadow: var(--shadow-glow); background: var(--white);
+    }
+    #user-input::placeholder { color: var(--gray-500); }
+
+    .input-actions { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
+
+    .btn-primary, .btn-secondary {
+      display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1);
+      padding: 12px 24px; border-radius: var(--radius-md);
+      font-family: inherit; font-size: 0.9375rem; font-weight: 600;
+      cursor: pointer; border: none;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue-600), var(--blue-700));
+      color: var(--white); box-shadow: var(--shadow-sm);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
+      transform: translateY(-2px); box-shadow: var(--shadow-md);
+    }
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--blue-50); color: var(--blue-800);
+      border: 1px solid #bfdbfe;
+    }
+    .btn-secondary:hover { background: var(--blue-100); transform: translateY(-1px); }
+    .btn-full { width: 100%; }
+    .btn-icon {
+      background: transparent; border: none; font-size: 1.125rem;
+      cursor: pointer; padding: var(--space-1); border-radius: var(--radius-sm);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .btn-icon:hover { background: var(--blue-50); transform: scale(1.1); }
+
+    .btn-loader {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3); border-top-color: var(--white);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    .btn-loader.hidden, .btn-text.hidden { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+    .output-header h3 { font-size: 1rem; font-weight: 600; color: var(--blue-800); }
+
+    .ai-response {
+      flex: 1; overflow-y: auto; max-height: 420px; padding: var(--space-2);
+      background: var(--blue-50); border-radius: var(--radius-md);
+      border: 1px solid var(--blue-100); font-size: 0.9375rem; line-height: 1.7;
+    }
+    .response-content { white-space: pre-wrap; }
+    .placeholder-text { color: var(--gray-500); font-style: italic; }
+    .loading-text { color: var(--blue-600); font-weight: 500; }
+
+    .ai-response::-webkit-scrollbar { width: 8px; }
+    .ai-response::-webkit-scrollbar-track { background: var(--blue-50); border-radius: 4px; }
+    .ai-response::-webkit-scrollbar-thumb { background: var(--blue-300); border-radius: 4px; }
+
+    /* Exit modal */
+    #exit-modal .modal-content { max-width: 360px; }
+    #exit-modal h3 { font-size: 1.25rem; color: var(--blue-900); margin-bottom: var(--space-1); }
+    #exit-modal p { color: var(--gray-500); margin-bottom: var(--space-3); }
+    .modal-actions { display: flex; gap: var(--space-2); justify-content: center; }
+
+    @media (max-width: 900px) {
+      .app-container { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: relative; padding: var(--space-2); }
+      .menu { flex-direction: row; flex-wrap: wrap; gap: var(--space-1); }
+      .menu-btn { flex: 1 1 auto; justify-content: center; min-width: 120px; }
+      .menu-exit { margin-top: 0; }
+      .workspace { grid-template-columns: 1fr; }
+      .main-content { padding: var(--space-3) var(--space-2); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MODAL API KEY -->
+  <div id="api-key-modal" class="modal">
+    <div class="modal-content">
+      <div class="brand-icon-large">✦</div>
+      <h2>AI Learning Assistant</h2>
+      <p>Masukkan Gemini API Key untuk mulai</p>
+
+      <div class="api-key-form">
+        <label for="api-key-input">Gemini API Key</label>
+        <input type="password" id="api-key-input" placeholder="AIzaSy..." autocomplete="off" spellcheck="false" />
+
+        <label for="model-select">Model</label>
+        <select id="model-select" class="model-select">
+          <option value="gemini-2.5-flash">gemini-2.5-flash (paling stabil)</option>
+          <option value="gemini-3.8-flash">gemini-3.8-flash (terbaru)</option>
+          <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+        </select>
+
+        <p class="api-key-hint">
+          Dapatkan gratis di
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>
+        </p>
+        <p id="api-key-error" class="error-text hidden"></p>
+        <button id="btn-save-key" class="btn-primary btn-full">Simpan &amp; Mulai</button>
+      </div>
+      <p class="api-key-note">
+        API Key hanya disimpan di browser kamu (sessionStorage).<br>
+        Tidak dikirim ke server manapun selain Google Gemini.
+      </p>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="app-container hidden" id="app-container">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">✦</div>
+        <div class="brand-text">
+          <h1>AI Learning</h1>
+          <p id="model-label">Gemini</p>
+        </div>
+      </div>
+      <nav class="menu">
+        <button class="menu-btn active" data-mode="tanya"><span class="menu-icon">💬</span><span class="menu-label">Tanya AI</span></button>
+        <button class="menu-btn" data-mode="jelaskan"><span class="menu-icon">📚</span><span class="menu-label">Jelaskan Materi</span></button>
+        <button class="menu-btn" data-mode="ringkas"><span class="menu-icon">📝</span><span class="menu-label">Buat Ringkasan</span></button>
+        <button class="menu-btn" data-mode="soal"><span class="menu-icon">❓</span><span class="menu-label">Buat Soal</span></button>
+        <button class="menu-btn menu-exit" data-mode="keluar"><span class="menu-icon">🚪</span><span class="menu-label">Keluar</span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btn-change-key" class="btn-change-key">🔑 Ganti API Key / Model</button>
+        <p>Static • GitHub Pages / Vercel ready</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="content-header">
+        <h2 id="mode-title">Tanya AI</h2>
+        <p id="mode-desc">Ajukan pertanyaan apa saja. AI siap membantu!</p>
+      </header>
+      <section class="workspace">
+        <div class="input-card">
+          <label id="input-label" for="user-input">Pertanyaanmu</label>
+          <textarea id="user-input" rows="5" placeholder="Tulis pertanyaan di sini..." spellcheck="false"></textarea>
+          <div class="input-actions">
+            <button id="btn-submit" class="btn-primary">
+              <span class="btn-text">Kirim</span>
+              <span class="btn-loader hidden"></span>
+            </button>
+            <button id="btn-clear" class="btn-secondary" type="button">Bersihkan</button>
+          </div>
+        </div>
+        <div class="output-card">
+          <div class="output-header">
+            <h3>Hasil AI</h3>
+            <button id="btn-copy" class="btn-icon" title="Salin">📋</button>
+          </div>
+          <div id="ai-response" class="ai-response">
+            <p class="placeholder-text">Hasil dari AI akan muncul di sini...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Exit Modal -->
+  <div id="exit-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Keluar / Reset?</h3>
+      <p>Semua input dan hasil akan direset. API Key tetap tersimpan.</p>
+      <div class="modal-actions">
+        <button id="btn-confirm-exit" class="btn-primary">Ya, Reset</button>
+        <button id="btn-cancel-exit" class="btn-secondary">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       STATIC VERSION - Langsung panggil Gemini REST API
+       Cocok untuk GitHub Pages & Vercel (tidak perlu backend)
+       ============================================================ */
+
+    const STORAGE_KEY = "gemini_api_key";
+    const STORAGE_MODEL = "gemini_model";
+
+    const SYSTEM_PROMPTS = {
+      tanya: "Kamu adalah asisten AI edukasi yang ramah, cerdas, dan membantu. Jawab pertanyaan pengguna dengan jelas, akurat, dan dalam bahasa Indonesia. Gunakan bahasa yang mudah dipahami. Jika pertanyaan di luar pengetahuan, katakan dengan jujur. Berikan contoh jika relevan.",
+      jelaskan: "Kamu adalah guru yang sangat ahli dalam menjelaskan materi pelajaran. Tugasmu: jelaskan materi yang diminta pengguna secara mendalam, terstruktur, dan mudah dipahami. Gunakan analogi, contoh sehari-hari, dan langkah-langkah jika perlu. Bahasa Indonesia yang jelas dan ramah. Struktur jawaban: 1) Definisi singkat, 2) Penjelasan detail, 3) Contoh, 4) Kesimpulan penting.",
+      ringkas: "Kamu adalah ahli membuat ringkasan. Tugasmu: buat ringkasan dari teks yang diberikan pengguna. Ringkasan harus singkat, padat, jelas, dan tetap mempertahankan inti informasi penting. Gunakan bahasa Indonesia. Format: poin-poin utama atau paragraf singkat yang mudah dibaca.",
+      soal: "Kamu adalah pembuat soal ujian yang profesional. Tugasmu: buat soal latihan berdasarkan materi yang diberikan pengguna. Buat 5 soal (campuran pilihan ganda dan essay singkat). Untuk pilihan ganda: berikan 4 opsi (A-D) dan tandai jawaban benar. Untuk essay: berikan kunci jawaban singkat. Bahasa Indonesia. Format rapi dan mudah dibaca."
+    };
+
+    const MODES = {
+      tanya: { title: "Tanya AI", desc: "Ajukan pertanyaan apa saja. AI siap membantu!", label: "Pertanyaanmu", placeholder: "Contoh: Apa itu fotosintesis?", field: "prompt", system: "tanya" },
+      jelaskan: { title: "Jelaskan Materi", desc: "Masukkan topik yang ingin dijelaskan secara mendalam.", label: "Materi / Topik", placeholder: "Contoh: Hukum Newton, Fotosintesis...", field: "materi", system: "jelaskan" },
+      ringkas: { title: "Buat Ringkasan", desc: "Tempel teks panjang, AI akan membuat ringkasan padat.", label: "Teks yang ingin diringkas", placeholder: "Tempel teks panjang di sini (minimal ~50 karakter)...", field: "teks", system: "ringkas" },
+      soal: { title: "Buat Soal", desc: "Masukkan materi, AI akan membuat 5 soal + kunci jawaban.", label: "Materi untuk soal", placeholder: "Contoh: Materi sistem pernapasan...", field: "materi", system: "soal" }
+    };
+
+    let currentMode = "tanya";
+
+    function getApiKey() { return sessionStorage.getItem(STORAGE_KEY) || ""; }
+    function setApiKey(k) { sessionStorage.setItem(STORAGE_KEY, k.trim()); }
+    function clearApiKey() { sessionStorage.removeItem(STORAGE_KEY); }
+    function getModel() { return sessionStorage.getItem(STORAGE_MODEL) || "gemini-2.5-flash"; }
+    function setModel(m) { sessionStorage.setItem(STORAGE_MODEL, m); }
+
+    const apiKeyModal = document.getElementById("api-key-modal");
+    const apiKeyInput = document.getElementById("api-key-input");
+    const modelSelect = document.getElementById("model-select");
+    const btnSaveKey = document.getElementById("btn-save-key");
+    const apiKeyError = document.getElementById("api-key-error");
+    const appContainer = document.getElementById("app-container");
+    const btnChangeKey = document.getElementById("btn-change-key");
+    const modelLabel = document.getElementById("model-label");
+
+    function checkApiKeyOnLoad() {
+      if (getApiKey()) {
+        apiKeyModal.classList.add("hidden");
+        appContainer.classList.remove("hidden");
+        modelLabel.textContent = getModel();
+        modelSelect.value = getModel();
+      } else {
+        apiKeyModal.classList.remove("hidden");
+        appContainer.classList.add("hidden");
+        apiKeyInput.focus();
+      }
+    }
+
+    btnSaveKey.addEventListener("click", () => {
+      const key = apiKeyInput.value.trim();
+      if (!key) {
+        apiKeyError.textContent = "API Key tidak boleh kosong.";
+        apiKeyError.classList.remove("hidden");
+        return;
+      }
+      if (key.length < 20) {
+        apiKeyError.textContent = "API Key sepertinya terlalu pendek.";
+        apiKeyError.classList.remove("hidden");
+        return;
+      }
+      setApiKey(key);
+      setModel(modelSelect.value);
+      apiKeyError.classList.add("hidden");
+      apiKeyModal.classList.add("hidden");
+      appContainer.classList.remove("hidden");
+      modelLabel.textContent = modelSelect.value;
+      apiKeyInput.value = "";
+    });
+
+    apiKeyInput.addEventListener("keydown", (e) => { if (e.key === "Enter") btnSaveKey.click(); });
+
+    btnChangeKey.addEventListener("click", () => {
+      clearApiKey();
+      appContainer.classList.add("hidden");
+      apiKeyModal.classList.remove("hidden");
+      apiKeyInput.value = "";
+      modelSelect.value = getModel();
+      apiKeyInput.focus();
+    });
+
+    /* ---- Gemini REST API call (langsung dari browser) ---- */
+    async function callGemini(userText) {
+      const apiKey = getApiKey();
+      const model = getModel();
+      const system = SYSTEM_PROMPTS[MODES[currentMode].system];
+
+      let contents = userText;
+      if (currentMode === "jelaskan") contents = "Jelaskan materi berikut secara lengkap dan mudah dipahami:\n\n" + userText;
+      if (currentMode === "ringkas") contents = "Buatkan ringkasan yang jelas dan padat dari teks berikut:\n\n" + userText;
+      if (currentMode === "soal") contents = "Berdasarkan materi berikut, buatkan 5 soal latihan (campuran pilihan ganda dan essay singkat):\n\n" + userText;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      const body = {
+        system_instruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: contents }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+      };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg = data?.error?.message || JSON.stringify(data);
+        if (res.status === 503 || (msg && msg.toLowerCase().includes("high demand"))) {
+          throw new Error("Model sedang sibuk (high demand). Coba lagi atau ganti model.");
+        }
+        if (res.status === 400 || res.status === 401 || res.status === 403) {
+          throw new Error("API Key tidak valid atau tidak punya akses ke model ini. Coba ganti model.");
+        }
+        throw new Error(msg || "Gagal memanggil Gemini API");
+      }
+
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error("AI tidak memberikan respons. Coba lagi.");
+      return text.trim();
+    }
+
+    /* ---- UI ---- */
+    const menuBtns = document.querySelectorAll(".menu-btn");
+    const modeTitle = document.getElementById("mode-title");
+    const modeDesc = document.getElementById("mode-desc");
+    const inputLabel = document.getElementById("input-label");
+    const userInput = document.getElementById("user-input");
+    const btnSubmit = document.getElementById("btn-submit");
+    const btnClear = document.getElementById("btn-clear");
+    const btnCopy = document.getElementById("btn-copy");
+    const aiResponse = document.getElementById("ai-response");
+    const exitModal = document.getElementById("exit-modal");
+
+    menuBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const mode = btn.dataset.mode;
+        if (mode === "keluar") { exitModal.classList.remove("hidden"); return; }
+        menuBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentMode = mode;
+        const cfg = MODES[mode];
+        modeTitle.textContent = cfg.title;
+        modeDesc.textContent = cfg.desc;
+        inputLabel.textContent = cfg.label;
+        userInput.placeholder = cfg.placeholder;
+        userInput.value = "";
+        aiResponse.innerHTML = '<p class="placeholder-text">Hasil dari AI akan muncul di sini...</p>';
+      });
+    });
+
+    async function submitPrompt() {
+      const text = userInput.value.trim();
+      if (!getApiKey()) {
+        aiResponse.innerHTML = '<p class="error-text">⚠️ API Key belum diisi.</p>';
+        checkApiKeyOnLoad();
+        return;
+      }
+      if (!text) {
+        aiResponse.innerHTML = '<p class="error-text">⚠️ Input tidak boleh kosong.</p>';
+        return;
+      }
+      if (currentMode === "ringkas" && text.length < 50) {
+        aiResponse.innerHTML = '<p class="error-text">⚠️ Teks terlalu pendek untuk diringkas (minimal ~50 karakter).</p>';
+        return;
+      }
+
+      btnSubmit.disabled = true;
+      btnSubmit.querySelector(".btn-text").classList.add("hidden");
+      btnSubmit.querySelector(".btn-loader").classList.remove("hidden");
+      aiResponse.innerHTML = '<p class="loading-text">⏳ AI sedang berpikir...</p>';
+
+      try {
+        const result = await callGemini(text);
+        let html = result
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\n/g, "<br>");
+        aiResponse.innerHTML = `<div class="response-content">${html}</div>`;
+      } catch (err) {
+        aiResponse.innerHTML = `<p class="error-text">⚠️ ${err.message}</p>`;
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.querySelector(".btn-text").classList.remove("hidden");
+        btnSubmit.querySelector(".btn-loader").classList.add("hidden");
+      }
+    }
+
+    btnSubmit.addEventListener("click", submitPrompt);
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submitPrompt(); }
+    });
+    btnClear.addEventListener("click", () => {
+      userInput.value = "";
+      aiResponse.innerHTML = '<p class="placeholder-text">Hasil dari AI akan muncul di sini...</p>';
+      userInput.focus();
+    });
+    btnCopy.addEventListener("click", async () => {
+      const t = aiResponse.innerText;
+      if (!t || t.includes("Hasil dari AI akan muncul")) return;
+      try {
+        await navigator.clipboard.writeText(t);
+        btnCopy.textContent = "✅";
+        setTimeout(() => btnCopy.textContent = "📋", 1500);
+      } catch { alert("Gagal menyalin"); }
+    });
+
+    document.getElementById("btn-cancel-exit").addEventListener("click", () => exitModal.classList.add("hidden"));
+    document.getElementById("btn-confirm-exit").addEventListener("click", () => {
+      userInput.value = "";
+      aiResponse.innerHTML = '<p class="placeholder-text">Hasil dari AI akan muncul di sini...</p>';
+      menuBtns.forEach(b => b.classList.remove("active"));
+      document.querySelector('[data-mode="tanya"]').classList.add("active");
+      currentMode = "tanya";
+      const cfg = MODES.tanya;
+      modeTitle.textContent = cfg.title;
+      modeDesc.textContent = cfg.desc;
+      inputLabel.textContent = cfg.label;
+      userInput.placeholder = cfg.placeholder;
+      exitModal.classList.add("hidden");
+    });
+    exitModal.addEventListener("click", (e) => { if (e.target === exitModal) exitModal.classList.add("hidden"); });
+
+    checkApiKeyOnLoad();
+  </script>
+</body>
+</html>
